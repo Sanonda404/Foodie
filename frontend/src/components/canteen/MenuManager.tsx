@@ -1,93 +1,93 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MenuItem } from "../types";
 import { Edit2, ToggleLeft, ToggleRight, Package, Plus } from "lucide-react";
+import api from "../../api";
+import { useNavigate } from "react-router-dom";
 
 interface MenuManagerProps {
-  menuItems: MenuItem[];
-  onUpdateItem: (item: MenuItem) => void;
-  onAddItem: (item: MenuItem) => void;
+  defaultItems: MenuItem[];
 }
 
-export function MenuManager({
-  menuItems,
-  onUpdateItem,
-  onAddItem,
-}: MenuManagerProps) {
+export function MenuManager({ defaultItems }: MenuManagerProps) {
+  const navigate = useNavigate()
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>("All");
 
+  // Load menu from backend, fallback to defaults
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        const res = await api.get("/menu");
+        console.log(res)
+        setMenuItems(res.data as MenuItem[]);
+      } catch (err) {
+        console.error("Failed to fetch menu, loading defaults:", err);
+        setMenuItems(defaultItems);
+      }
+    };
+    fetchMenu();
+  }, [defaultItems]);
+
+  const catagory = ["MainCourse", "Beverages", "Sancks", "Desserts"]
+
   const categories = [
     "All",
-    ...Array.from(new Set(menuItems.map((item) => item.category))),
+    ...catagory,
   ];
-
-  // Initial state for new menu item
-  const [newItem, setNewItem] = useState<Omit<MenuItem, "id">>({
-    name: "",
-    category: "",
-    price: 0,
-    description: "",
-    prepTime: 10,
-    stock: 50,
-    available: true,
-    image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
-  });
+  
 
   const filteredItems =
     filterCategory === "All"
       ? menuItems
       : menuItems.filter((item) => item.category === filterCategory);
 
-  const handleToggleAvailability = (item: MenuItem) => {
-    onUpdateItem({
-      ...item,
-      available: !item.available,
-    });
+  const handleToggleAvailability = async (item: MenuItem) => {
+    const updated = { ...item, available: !item.available };
+    try {
+      await api.put(`/menu/${item.id}`, updated);
+      setMenuItems((prev) => prev.map((i) => (i.id === item.id ? updated : i)));
+    } catch (err) {
+      console.error("Failed to update availability:", err);
+    }
   };
 
-  const handleUpdateStock = (item: MenuItem, newStock: number) => {
-    onUpdateItem({
+  const handleUpdateStock = async (item: MenuItem, newStock: number) => {
+    const updated: MenuItem = {
       ...item,
       stock: Math.max(0, newStock),
       available: newStock > 0 ? item.available : false,
-    });
+    };
+    try {
+      console.log(updated)
+      await api.put(`/menu/${item.id}`, updated);
+      setMenuItems((prev) => prev.map((i) => (i.id === item.id ? updated : i)));
+    } catch (err) {
+      console.error("Failed to update stock:", err);
+    }
   };
 
-  const handleSaveEdit = () => {
-    if (editingItem) {
-      onUpdateItem(editingItem);
+  const handleSaveEdit = async () => {
+    if (!editingItem) return;
+    try {
+      await api.put(`/menu/${editingItem.id}`, editingItem);
+      setMenuItems((prev) =>
+        prev.map((i) => (i.id === editingItem.id ? editingItem : i))
+      );
       setEditingItem(null);
+    } catch (err) {
+      console.error("Failed to save edit:", err);
     }
   };
 
-  const handleAddItem = () => {
-    if (newItem.name && newItem.category && newItem.price > 0) {
-      onAddItem({
-        ...newItem,
-        id: Date.now().toString(), // Generate a unique ID
-      });
-      setIsCreating(false);
-      setNewItem({
-        name: "",
-        category: "",
-        price: 0,
-        description: "",
-        prepTime: 10,
-        stock: 50,
-        available: true,
-        image:
-          "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
-      });
-    }
-  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="flex items-center justify-between">
         <h2 className="text-gray-900">Menu Manager</h2>
         <button
-          onClick={() => setIsCreating(true)}
+          onClick={()=>navigate('/add-food')}
           className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
         >
           <Plus className="w-4 h-4" />
@@ -103,7 +103,7 @@ export function MenuManager({
             onClick={() => setFilterCategory(category)}
             className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
               filterCategory === category
-                ? "bg-linear-to-r from-purple-500 to-indigo-500 text-white shadow-md"
+                ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md"
                 : "bg-white border border-gray-300 text-gray-700 hover:border-purple-400"
             }`}
           >
@@ -147,6 +147,7 @@ export function MenuManager({
                     </label>
                     <div className="flex items-center gap-2">
                       <button
+                        type="button"
                         onClick={() => handleUpdateStock(item, item.stock - 5)}
                         className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100"
                       >
@@ -157,6 +158,7 @@ export function MenuManager({
                         <span className="text-gray-900">{item.stock}</span>
                       </div>
                       <button
+                        type="button"
                         onClick={() => handleUpdateStock(item, item.stock + 5)}
                         className="w-8 h-8 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-100"
                       >
@@ -179,6 +181,7 @@ export function MenuManager({
                       Availability
                     </label>
                     <button
+                      type="button"
                       onClick={() => handleToggleAvailability(item)}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                         item.available
@@ -205,12 +208,12 @@ export function MenuManager({
               {/* Actions */}
               <div className="flex md:flex-col gap-2">
                 <button
+                  type="button"
                   onClick={() => setEditingItem(item)}
                   className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700"
                 >
                   <Edit2 className="w-4 h-4" />
-                  Edit
-                </button>
+                                  </button>
               </div>
             </div>
           </div>
@@ -219,9 +222,18 @@ export function MenuManager({
 
       {/* Edit Modal */}
       {editingItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-gray-900 mb-4">Edit Menu Item</h3>
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 border">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-gray-900">Edit Menu Item</h3>
+              <button
+                type="button"
+                onClick={() => setEditingItem(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
 
             <div className="space-y-4">
               <div>
@@ -232,7 +244,7 @@ export function MenuManager({
                   onChange={(e) =>
                     setEditingItem({ ...editingItem, name: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
                 />
               </div>
 
@@ -249,7 +261,7 @@ export function MenuManager({
                     })
                   }
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
                 />
               </div>
 
@@ -267,7 +279,7 @@ export function MenuManager({
                         price: Number(e.target.value),
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
 
@@ -284,7 +296,7 @@ export function MenuManager({
                         prepTime: Number(e.target.value),
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
               </div>
@@ -292,12 +304,14 @@ export function MenuManager({
 
             <div className="flex gap-2 mt-6">
               <button
+                type="button"
                 onClick={handleSaveEdit}
                 className="flex-1 bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600"
               >
                 Save Changes
               </button>
               <button
+                type="button"
                 onClick={() => setEditingItem(null)}
                 className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300"
               >
@@ -310,109 +324,29 @@ export function MenuManager({
 
       {/* Add Modal */}
       {isCreating && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-gray-900 mb-4">Add Menu Item</h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">Name</label>
-                <input
-                  type="text"
-                  value={newItem.name}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, name: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={newItem.description}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, description: e.target.value })
-                  }
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">
-                  Category
-                </label>
-                <input
-                  type="text"
-                  value={newItem.category}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, category: e.target.value })
-                  }
-                  placeholder="e.g., Main Course, Beverages, Snacks"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-700 mb-2">
-                  Image URL
-                </label>
-                <input
-                  type="text"
-                  value={newItem.image}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, image: e.target.value })
-                  }
-                  placeholder="https://example.com/image.jpg"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-700 mb-2">
-                    Price (₹)
-                  </label>
-                  <input
-                    type="number"
-                    value={newItem.price}
-                    onChange={(e) =>
-                      setNewItem({ ...newItem, price: Number(e.target.value) })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-700 mb-2">
-                    Prep Time (min)
-                  </label>
-                  <input
-                    type="number"
-                    value={newItem.prepTime}
-                    onChange={(e) =>
-                      setNewItem({
-                        ...newItem,
-                        prepTime: Number(e.target.value),
-                      })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
+        <div className="absolute top-12 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 border">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-gray-900">Add Menu Item</h3>
+              <button
+                type="button"
+                onClick={() => setIsCreating(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="flex gap-2 mt-6">
               <button
-                onClick={handleAddItem}
+                type="button"
+                onClick={()=>navigate('/add-food')}
                 className="flex-1 bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600"
               >
                 Add Item
               </button>
               <button
+                type="button"
                 onClick={() => setIsCreating(false)}
                 className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300"
               >

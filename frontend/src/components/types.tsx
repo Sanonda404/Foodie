@@ -1,5 +1,14 @@
+export interface Signup {
+  studentId : string;
+  password : string;
+}
+
+export interface CanteenLogin {
+  password : string;
+}
+
 export interface MenuItem {
-  id: string;
+  id: number;
   name: string;
   category: string;
   price: number;
@@ -16,14 +25,11 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: string;
-  token: string;
-  studentName: string;
+  id?: number;
   items: OrderItem[];
   totalPrice: number;
-  pickupTime: Date;
-  orderTime: Date;
-  status: 'pending' | 'preparing' | 'ready' | 'completed';
+  pickupTime: string;
+  status: 'pending' | 'preparing' | 'ready';
   isGroupOrder: boolean;
   groupMembers?: string[];
 }

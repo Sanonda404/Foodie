@@ -1,24 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { MenuItem, OrderItem } from '../types';
 import { Plus, Search, AlertCircle, Clock } from 'lucide-react';
 
 interface MenuBrowserProps {
-  menuItems: MenuItem[];
   onAddToCart: (item: OrderItem) => void;
 }
 
-export function MenuBrowser({ menuItems, onAddToCart }: MenuBrowserProps) {
+export function MenuBrowser({ onAddToCart }: MenuBrowserProps) {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch menu from backend
+  useEffect(() => {
+    axios.get<MenuItem[]>('http://localhost:8000/menu')
+      .then(res => {
+        setMenuItems(res.data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch menu:', err);
+        setError('Could not load menu');
+        setLoading(false);
+      });
+  }, []);
 
   const categories = ['All', ...Array.from(new Set(menuItems.map(item => item.category)))];
 
   const filteredItems = menuItems.filter(item => {
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch =
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  if (loading) {
+    return <p className="text-center py-12">Loading menu...</p>;
+  }
+
+  if (error) {
+    return <p className="text-center py-12 text-red-500">{error}</p>;
+  }
 
   return (
     <div>

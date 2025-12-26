@@ -96,7 +96,7 @@ export function CanteenView({ complaints, onUpdateComplaint }: CanteenViewProps)
         <Analytics orders={orders} menuItems={menuItems} />
       )}
       {activeTab === 'menu' && (
-        <MenuManager menuItems={menuItems} onUpdateItem={updateMenuItem} onAddItem={addMenuItem} />
+        <MenuManager defaultItems={[]} />
       )}
       {activeTab === 'complaints' && (
         <ComplaintsManager complaints={complaints} onUpdateComplaint={onUpdateComplaint} />

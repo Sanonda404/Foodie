@@ -1,56 +1,62 @@
 import { useState } from 'react';
+import axios from 'axios';
 import { OrderItem, Order } from '../types';
 import { Minus, Plus, Trash2, Clock, Users, ShoppingBag } from 'lucide-react';
 
 interface OrderCartProps {
   cart: OrderItem[];
-  onUpdateQuantity: (itemId: string, quantity: number) => void;
-  onRemoveItem: (itemId: string) => void;
-  onPlaceOrder: (order: Order) => void;
+  onUpdateQuantity: (itemId: number, quantity: number) => void;
+  onRemoveItem: (itemId: number) => void;
 }
 
-export function OrderCart({ cart, onUpdateQuantity, onRemoveItem, onPlaceOrder }: OrderCartProps) {
-  const [studentName, setStudentName] = useState('');
-  const [pickupTime, setPickupTime] = useState('');
+export function OrderCart({ cart, onUpdateQuantity, onRemoveItem }: OrderCartProps) {
+  const [pickupTime, setPickupTime] = useState<string>(''); // ISO string
   const [isGroupOrder, setIsGroupOrder] = useState(false);
   const [groupMembers, setGroupMembers] = useState<string[]>([]);
   const [newMember, setNewMember] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const totalPrice = cart.reduce((sum, item) => sum + item.menuItem.price * item.quantity, 0);
   const estimatedPrepTime = Math.max(...cart.map(item => item.menuItem.prepTime), 0);
 
-  const handlePlaceOrder = () => {
-    if (!studentName.trim() || !pickupTime) {
-      alert('Please enter your name and select a pickup time');
+  const handlePlaceOrder = async () => {
+    if (!pickupTime) {
+      alert('Please select a pickup time');
       return;
     }
 
     const pickupDateTime = new Date(pickupTime);
     const now = new Date();
-    
     if (pickupDateTime <= now) {
       alert('Pickup time must be in the future');
       return;
     }
 
     const order: Order = {
-      id: `ORD${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
-      token: `T${Math.floor(100 + Math.random() * 900)}`,
-      studentName,
       items: cart,
       totalPrice,
-      pickupTime: pickupDateTime,
-      orderTime: new Date(),
+      pickupTime, // ISO string
       status: 'pending',
       isGroupOrder,
-      groupMembers: isGroupOrder ? groupMembers : undefined
+      groupMembers: isGroupOrder ? groupMembers : undefined,
     };
 
-    onPlaceOrder(order);
-    setStudentName('');
-    setPickupTime('');
-    setIsGroupOrder(false);
-    setGroupMembers([]);
+    try {
+      setLoading(true);
+      const res = await axios.post('http://localhost:8000/order', order);
+      alert('Order placed successfully!');
+      console.log('Backend response:', res.data);
+
+      // reset form
+      setPickupTime('');
+      setIsGroupOrder(false);
+      setGroupMembers([]);
+    } catch (err) {
+      console.error('Failed to place order:', err);
+      alert('Failed to place order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const addGroupMember = () => {
@@ -64,15 +70,13 @@ export function OrderCart({ cart, onUpdateQuantity, onRemoveItem, onPlaceOrder }
     setGroupMembers(groupMembers.filter(m => m !== member));
   };
 
-  // Generate pickup time options (next 2 hours in 15-minute intervals)
-  const getPickupTimeOptions = () => {
-    const options = [];
+  const getPickupTimeOptions = (): string[] => {
+    const options: string[] = [];
     const now = new Date();
-    const minTime = new Date(now.getTime() + (estimatedPrepTime + 5) * 60000); // prep time + 5 min buffer
-    
+    const minTime = new Date(now.getTime() + (estimatedPrepTime + 5) * 60000);
     for (let i = 0; i < 8; i++) {
       const time = new Date(minTime.getTime() + i * 15 * 60000);
-      options.push(time);
+      options.push(time.toISOString());
     }
     return options;
   };
@@ -92,7 +96,6 @@ export function OrderCart({ cart, onUpdateQuantity, onRemoveItem, onPlaceOrder }
       {/* Cart Items */}
       <div className="lg:col-span-2 space-y-4">
         <h2 className="text-gray-900">Cart Items</h2>
-        
         {cart.map(item => (
           <div key={item.menuItem.id} className="bg-white rounded-lg shadow-sm border p-4">
             <div className="flex gap-4">
@@ -101,7 +104,6 @@ export function OrderCart({ cart, onUpdateQuantity, onRemoveItem, onPlaceOrder }
                 alt={item.menuItem.name}
                 className="w-24 h-24 object-cover rounded-lg"
               />
-              
               <div className="flex-1">
                 <div className="flex justify-between items-start mb-2">
                   <div>
@@ -115,7 +117,6 @@ export function OrderCart({ cart, onUpdateQuantity, onRemoveItem, onPlaceOrder }
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
-                
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <button
@@ -132,10 +133,7 @@ export function OrderCart({ cart, onUpdateQuantity, onRemoveItem, onPlaceOrder }
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
-                  
-                  <span className="text-orange-500">
-                    ₹{item.menuItem.price * item.quantity}
-                  </span>
+                  <span className="text-orange-500">₹{item.menuItem.price * item.quantity}</span>
                 </div>
               </div>
             </div>
@@ -147,21 +145,10 @@ export function OrderCart({ cart, onUpdateQuantity, onRemoveItem, onPlaceOrder }
       <div className="lg:col-span-1">
         <div className="bg-white rounded-lg shadow-sm border p-6 sticky top-24">
           <h3 className="text-gray-900 mb-4">Order Details</h3>
-          
+
           <div className="space-y-4 mb-6">
             <div>
-              <label className="block text-sm text-gray-700 mb-2">Your Name</label>
-              <input
-                type="text"
-                value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm text-gray-700 mb-2 flex items-center gap-2">
+              <label className="text-sm text-gray-700 mb-2 flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 Pickup Time
               </label>
@@ -172,8 +159,8 @@ export function OrderCart({ cart, onUpdateQuantity, onRemoveItem, onPlaceOrder }
               >
                 <option value="">Select time</option>
                 {getPickupTimeOptions().map((time, index) => (
-                  <option key={index} value={time.toISOString()}>
-                    {time.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                  <option key={index} value={time}>
+                    {new Date(time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                   </option>
                 ))}
               </select>
@@ -210,22 +197,26 @@ export function OrderCart({ cart, onUpdateQuantity, onRemoveItem, onPlaceOrder }
                     className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                   <button
-                    onClick={addGroupMember}
-                    className="px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm"
-                  >
-                    Add
-                  </button>
-                </div>
-                {groupMembers.length > 0 && (
-                  <div className="space-y-1">
-                    {groupMembers.map((member, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded text-sm">
-                        <span className="text-gray-700">{member}</span>
-                        <button
-                          onClick={() => removeGroupMember(member)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="w-3 h-3" />
+  onClick={addGroupMember}
+  className="px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm"
+>
+  Add
+</button>
+</div>
+
+{groupMembers.length > 0 && (
+  <div className="space-y-1">
+    {groupMembers.map((member, index) => (
+      <div
+        key={index}
+        className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded text-sm"
+      >
+        <span className="text-gray-700">{member}</span>
+        <button
+          onClick={() => removeGroupMember(member)}
+          className="text-red-500 hover:text-red-700"
+        >
+                                    <Trash2 className="w-3 h-3" />
                         </button>
                       </div>
                     ))}
@@ -248,9 +239,14 @@ export function OrderCart({ cart, onUpdateQuantity, onRemoveItem, onPlaceOrder }
 
           <button
             onClick={handlePlaceOrder}
-            className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-lg hover:shadow-lg transition-all"
+            disabled={loading}
+            className={`w-full py-3 rounded-lg transition-all ${
+              loading
+                ? 'bg-gray-400 text-gray-700 cursor-not-allowed'
+                : 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:shadow-lg'
+            }`}
           >
-            Place Order
+            {loading ? 'Placing Order...' : 'Place Order'}
           </button>
         </div>
       </div>
