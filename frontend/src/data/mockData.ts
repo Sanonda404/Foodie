@@ -1,4 +1,4 @@
-import { MenuItem, Order } from '../types';
+import { MenuItem, Order } from '../components/types';
 
 export const mockMenuItems: MenuItem[] = [
   {

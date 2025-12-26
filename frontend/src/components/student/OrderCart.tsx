@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { OrderItem, Order } from '../../types';
+import { OrderItem, Order } from '../types';
 import { Minus, Plus, Trash2, Clock, Users, ShoppingBag } from 'lucide-react';
 
 interface OrderCartProps {

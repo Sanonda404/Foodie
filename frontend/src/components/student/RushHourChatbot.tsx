@@ -7,7 +7,7 @@ import {
   AlertTriangle,
   UtensilsCrossed,
 } from "lucide-react";
-import { Order } from "../../types";
+import { Order } from "../types";
 
 interface RushHourChatbotProps {
   orders: Order[];

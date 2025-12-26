@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MenuItem } from "../../types";
+import { MenuItem } from "../types";
 import { Edit2, ToggleLeft, ToggleRight, Package, Plus } from "lucide-react";
 
 interface MenuManagerProps {
@@ -103,7 +103,7 @@ export function MenuManager({
             onClick={() => setFilterCategory(category)}
             className={`px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
               filterCategory === category
-                ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md"
+                ? "bg-linear-to-r from-purple-500 to-indigo-500 text-white shadow-md"
                 : "bg-white border border-gray-300 text-gray-700 hover:border-purple-400"
             }`}
           >

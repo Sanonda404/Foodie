@@ -1,4 +1,4 @@
-import { Order, MenuItem } from "../../types";
+import { Order, MenuItem } from "../types";
 import { TrendingUp, DollarSign, Clock, Package } from "lucide-react";
 import {
   BarChart,

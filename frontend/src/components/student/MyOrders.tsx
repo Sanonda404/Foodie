@@ -1,4 +1,4 @@
-import { Order } from '../../types';
+import { Order } from '../types';
 import { Clock, CheckCircle, Package, Utensils, Users } from 'lucide-react';
 
 interface MyOrdersProps {

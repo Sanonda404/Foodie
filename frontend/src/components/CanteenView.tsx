@@ -4,7 +4,7 @@ import { Analytics } from './canteen/Analytics';
 import { MenuManager } from './canteen/MenuManager';
 import { ComplaintsManager } from './canteen/ComplaintsManager';
 import { ClipboardList, BarChart3, MenuSquare, AlertTriangle } from 'lucide-react';
-import { Order, MenuItem, Complaint } from '../types';
+import { Order, MenuItem, Complaint } from './types';
 import { generateMockOrders, mockMenuItems } from '../data/mockData';
 
 interface CanteenViewProps {

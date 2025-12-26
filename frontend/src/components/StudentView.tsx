@@ -5,7 +5,7 @@ import { MyOrders } from './student/MyOrders';
 import { RushHourChatbot } from './student/RushHourChatbot';
 import { ReviewComplaint } from './student/ReviewComplaint';
 import { ShoppingCart, Receipt, UtensilsCrossed, MessageSquare } from 'lucide-react';
-import { OrderItem, Order, Complaint } from '../types';
+import { OrderItem, Order, Complaint } from './types';
 import { mockMenuItems, generateMockOrders } from '../data/mockData';
 
 interface StudentViewProps {

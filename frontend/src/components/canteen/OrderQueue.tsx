@@ -1,4 +1,4 @@
-import { Order } from '../../types';
+import { Order } from '../types';
 import { Clock, Users, ArrowRight } from 'lucide-react';
 
 interface OrderQueueProps {
@@ -159,7 +159,7 @@ export function OrderQueue({ orders, onUpdateStatus }: OrderQueueProps) {
                 {getNextStatus(order.status) && (
                   <button
                     onClick={() => onUpdateStatus(order.id, getNextStatus(order.status)!)}
-                    className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all flex items-center gap-2 justify-center whitespace-nowrap"
+                    className="bg-linear-to-r from-purple-500 to-indigo-500 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all flex items-center gap-2 justify-center whitespace-nowrap"
                   >
                     {getStatusButtonText(order.status)}
                     <ArrowRight className="w-4 h-4" />

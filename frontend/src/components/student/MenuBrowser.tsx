@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MenuItem, OrderItem } from '../../types';
+import { MenuItem, OrderItem } from '../types';
 import { Plus, Search, AlertCircle, Clock } from 'lucide-react';
 
 interface MenuBrowserProps {

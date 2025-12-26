@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Complaint } from "../../types";
+import { Complaint } from "../types";
 import {
   AlertTriangle,
   MessageSquare,
@@ -405,7 +405,7 @@ export function ComplaintsManager({
                     <button
                       onClick={handleResolve}
                       disabled={!resolution.trim()}
-                      className="mt-3 w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white py-3 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="mt-3 w-full bg-linear-to-r from-purple-500 to-indigo-500 text-white py-3 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Mark as Resolved
                     </button>

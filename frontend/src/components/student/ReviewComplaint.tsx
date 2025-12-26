@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Complaint } from "../../types";
+import { Complaint } from "../types";
 import {
   AlertTriangle,
   MessageSquare,

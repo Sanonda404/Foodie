@@ -1,10 +1,7 @@
 import { UtensilsCrossed, ChefHat, Users, Clock, TrendingUp, Sparkles } from 'lucide-react';
-
-interface LandingPageProps {
-  onSelectRole: (role: 'student' | 'canteen') => void;
-}
-
-export function LandingPage({ onSelectRole }: LandingPageProps) {
+import { useNavigate } from 'react-router-dom';
+export function LandingPage() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-pink-50">
       {/* Hero Section */}
@@ -28,7 +25,7 @@ export function LandingPage({ onSelectRole }: LandingPageProps) {
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
           {/* Student Card */}
           <button
-            onClick={() => onSelectRole('student')}
+            onClick={() => navigate('/student-login')}
             className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-8 border-2 border-transparent hover:border-orange-500 transform hover:-translate-y-2"
           >
             <div className="flex flex-col items-center text-center">
@@ -65,7 +62,7 @@ export function LandingPage({ onSelectRole }: LandingPageProps) {
 
           {/* Canteen Card */}
           <button
-            onClick={() => onSelectRole('canteen')}
+            onClick={() => navigate('/canteen-login')}
             className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-8 border-2 border-transparent hover:border-purple-500 transform hover:-translate-y-2"
           >
             <div className="flex flex-col items-center text-center">
