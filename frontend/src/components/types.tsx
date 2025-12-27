@@ -29,7 +29,7 @@ export interface Order {
   items: OrderItem[];
   totalPrice: number;
   pickupTime: string;
-  status: 'pending' | 'preparing' | 'ready';
+  status: 'pending' | 'preparing' | 'ready' | 'completed';
   isGroupOrder: boolean;
   groupMembers?: string[];
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import api from '../../api'
 import { OrderItem, Order } from '../types';
 import { Minus, Plus, Trash2, Clock, Users, ShoppingBag } from 'lucide-react';
 
@@ -10,7 +10,7 @@ interface OrderCartProps {
 }
 
 export function OrderCart({ cart, onUpdateQuantity, onRemoveItem }: OrderCartProps) {
-  const [pickupTime, setPickupTime] = useState<string>(''); // ISO string
+  const [pickupTime, setPickupTime] = useState<string>('');
   const [isGroupOrder, setIsGroupOrder] = useState(false);
   const [groupMembers, setGroupMembers] = useState<string[]>([]);
   const [newMember, setNewMember] = useState('');
@@ -20,6 +20,7 @@ export function OrderCart({ cart, onUpdateQuantity, onRemoveItem }: OrderCartPro
   const estimatedPrepTime = Math.max(...cart.map(item => item.menuItem.prepTime), 0);
 
   const handlePlaceOrder = async () => {
+    console.log("h")
     if (!pickupTime) {
       alert('Please select a pickup time');
       return;
@@ -35,15 +36,18 @@ export function OrderCart({ cart, onUpdateQuantity, onRemoveItem }: OrderCartPro
     const order: Order = {
       items: cart,
       totalPrice,
-      pickupTime, // ISO string
+      pickupTime,
       status: 'pending',
       isGroupOrder,
       groupMembers: isGroupOrder ? groupMembers : undefined,
     };
 
+    console.log(order);
+
     try {
       setLoading(true);
-      const res = await axios.post('http://localhost:8000/order', order);
+      console.log(order)
+      const res = await api.post(`/order/${12345}`, order);
       alert('Order placed successfully!');
       console.log('Backend response:', res.data);
 

@@ -15,9 +15,11 @@ import enum
 
 Base = declarative_base()
 
-class OrderStatus(enum.Enum):
+class OrderStatus(str, enum.Enum):
     preparing = "preparing"
+    pending = "pending"
     ready = "ready"
+    completed = "completed"
 
 class FoodCategories(str, enum.Enum):
     MainCourse = "MainCourse"
@@ -70,11 +72,13 @@ class Order(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
 
-    status = Column(Enum(OrderStatus), default=OrderStatus.preparing)
+    status = Column(Enum(OrderStatus, name="order_status"), default=OrderStatus.pending, nullable=False)
     token_no = Column(String, unique=True, index=True)
-    pickup_time = Column(DateTime)
+    pickup_time = Column(String)
+    is_group_order = Column(Boolean)
 
     created_at = Column(DateTime, default=datetime.utcnow)
+    total_price = Column(Integer)
 
     user = relationship("User", back_populates="orders")
     items = relationship("OrderItem", back_populates="order")

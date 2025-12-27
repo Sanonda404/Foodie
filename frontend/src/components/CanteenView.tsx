@@ -17,21 +17,6 @@ export function CanteenView({ complaints, onUpdateComplaint }: CanteenViewProps)
   const [orders, setOrders] = useState<Order[]>(generateMockOrders());
   const [menuItems, setMenuItems] = useState<MenuItem[]>(mockMenuItems);
 
-  const updateOrderStatus = (orderId: string, status: Order['status']) => {
-    setOrders(orders.map(order =>
-      order.id === orderId ? { ...order, status } : order
-    ));
-  };
-
-  const updateMenuItem = (updatedItem: MenuItem) => {
-    setMenuItems(menuItems.map(item =>
-      item.id === updatedItem.id ? updatedItem : item
-    ));
-  };
-
-  const addMenuItem = (newItem: MenuItem) => {
-    setMenuItems([...menuItems, newItem]);
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -90,7 +75,7 @@ export function CanteenView({ complaints, onUpdateComplaint }: CanteenViewProps)
 
       {/* Tab Content */}
       {activeTab === 'queue' && (
-        <OrderQueue orders={orders} onUpdateStatus={updateOrderStatus} />
+        <OrderQueue/>
       )}
       {activeTab === 'analytics' && (
         <Analytics orders={orders} menuItems={menuItems} />

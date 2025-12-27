@@ -4,10 +4,11 @@ from datetime import timedelta, datetime
 from passlib.context import CryptContext
 
 from src.database import get_db
-from src.schemas import StudentSignUpReq, StudentLogInReq, CanteenLogInReq, OrderReq, FoodOrder, FoodMenu, FoodResponse
+from src.schemas import StudentSignUpReq, StudentLogInReq, CanteenLogInReq, OrderReq, OrderResponse, FoodMenu, FoodResponse, OrderStatus
 
 from src.model import User, Order, FoodItem, OrderItem
 import random
+from typing import List
 
 router = APIRouter()
 
@@ -95,38 +96,84 @@ def update_food_item(item_id: int, item: FoodMenu, db: Session = Depends(get_db)
     return db_item
 
 
+@router.get("/order/{studentId}", response_model=List[OrderResponse])
+def get_orders(studentId: int, db: Session = Depends(get_db)):
+    orders = db.query(Order).filter(Order.user_id == studentId).order_by(Order.created_at.desc()).all()
+    if not orders:
+        return []
 
-@router.post("/order")
-def order(orderReq : OrderReq, db: Session = Depends(get_db)):
+    result = []
+    for order in orders:
+        # Build items list
+        items = []
+        for oi in db.query(OrderItem).filter(OrderItem.order_id == order.id).all():
+            food = db.query(FoodItem).filter(FoodItem.id == oi.food_id).first()
+            if food:
+                items.append({
+                    "menuItem": {
+                        "id": food.id,
+                        "name": food.name,
+                        "description": food.description,
+                        "category": food.category,
+                        "price": food.price,
+                        "available": food.available,
+                        "image": food.image,
+                        "prepTime": food.prepTime,
+                        "stock": food.stock,
+                    },
+                    "quantity": oi.quantity
+                })
+
+        result.append({
+            "id": order.id,
+            "token": order.token_no,
+            "orderTime": order.created_at,
+            "pickupTime": order.pickup_time,
+            "totalPrice": order.total_price,
+            "status": order.status,
+            "isGroupOrder": order.is_group_order,
+            "items": items
+        })
+
+    return result
+
+@router.post("/order/{studentId}")
+def order(studentId: int, orderReq: OrderReq, db: Session = Depends(get_db)):
     token_no = f"A-{random.randint(100, 999)}"
+
+    # Create Order row with all required fields
     order = Order(
-        user_id = orderReq.studentId,
-        token_no = 123,
-        pickup_time = orderReq.pickupTime
+        user_id=studentId,
+        token_no=token_no,
+        pickup_time=orderReq.pickupTime,
+        total_price=orderReq.totalPrice,
+        status=orderReq.status,
+        is_group_order=orderReq.isGroupOrder,
     )
     db.add(order)
     db.commit()
     db.refresh(order)
 
-    for f in orderReq.foods:
+    # Create OrderItem rows
+    for f in orderReq.items:
         food = db.query(FoodItem).filter(
-            FoodItem.id == f.food_id,
-            FoodItem.is_available == True
+            FoodItem.id == f.menuItem.id,
+            FoodItem.available == True
         ).first()
 
         if not food:
             raise HTTPException(
                 status_code=404,
-                detail=f"Food item {f.food_id} not available"
+                detail=f"Food item {f.menuItem.id} not available"
             )
 
         order_item = OrderItem(
             order_id=order.id,
-            food_id=f.food_id,
+            food_id=f.menuItem.id,
             quantity=f.quantity
         )
-
         db.add(order_item)
+
     db.commit()
 
     return {
@@ -134,3 +181,46 @@ def order(orderReq : OrderReq, db: Session = Depends(get_db)):
         "order_id": order.id,
         "token_no": token_no
     }
+
+
+@router.get("/canteen/orders")
+def get_active_orders(db: Session = Depends(get_db)):
+    orders = db.query(Order).filter(Order.status != "completed").all()
+    result = []
+    for order in orders:
+        items = []
+        for oi in db.query(OrderItem).filter(OrderItem.order_id == order.id).all():
+            food = db.query(FoodItem).filter(FoodItem.id == oi.food_id).first()
+            if food:
+                items.append({
+                    "menuItem": {
+                        "id": food.id,
+                        "name": food.name,
+                        "price": food.price,
+                        "prepTime": food.prepTime,
+                    },
+                    "quantity": oi.quantity
+                })
+        result.append({
+            "id": order.id,
+            "token_no": order.token_no,
+            "pickup_time": order.pickup_time,
+            "created_at": order.created_at,
+            "total_price": order.total_price,
+            "status": order.status,
+            "is_group_order": order.is_group_order,
+            "items": items
+        })
+    return result
+
+@router.patch("/order/{order_id}/status")
+def update_order_status(order_id: int, status: OrderStatus, db: Session = Depends(get_db)):
+    if status not in ["pending", "preparing", "ready"]:
+      raise HTTPException(status_code=400, detail="Invalid status")
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    setattr(order, "status", status.value)
+    db.commit()
+    db.refresh(order)
+    return order

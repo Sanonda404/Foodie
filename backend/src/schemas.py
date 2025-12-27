@@ -14,10 +14,11 @@ class FoodCatagries(str, Enum):
     Beverages = "Beverages"
     Desserts = "Desserts"
 
-class OrderStatus(Enum):
+class OrderStatus(str,Enum):
     pending = "pending"
-    preparing = "preparaing"
+    preparing = "preparing"
     ready = "ready"
+    completed = "completed"
 
 class StudentSignUpReq(BaseModel):
     studentId: str
@@ -37,9 +38,7 @@ class Food(BaseModel):
     price : int
     available : bool
 
-class FoodOrder(Food):
-    food_id : int
-    quantity : int
+
 
 class FoodMenu(Food):
     image : str
@@ -48,13 +47,19 @@ class FoodMenu(Food):
 
 class FoodResponse(FoodMenu):
     id : int
+class FoodOrder(BaseModel):
+    menuItem : FoodResponse
+    quantity : int
 
 class OrderReq(BaseModel):
-    studentId : str
     pickupTime : str
     totalPrice : int
-    foods : List[FoodOrder]
+    items : List[FoodOrder]
     status : OrderStatus
     isGroupOrder : bool
-    groupMembers: List[str];
+    groupMembers: Optional[List[str]] = None
 
+class OrderResponse(OrderReq):
+    id: int
+    token: str
+    orderTime: datetime
